@@ -216,6 +216,14 @@ export function activate(context: vscode.ExtensionContext) {
             case "toggleAutoSave":
                 autoSaveEnabled = message.enabled;
                 break;
+            case "modifyMessage":
+                await modifyMessage(message.index, message.newContent);
+                chatIdePanel.webview.postMessage({ command: "modifyMessageComplete", index: message.index, newContent: message.newContent });
+                return;
+            case "deleteMessage":
+                await deleteMessage(message.index);
+                chatIdePanel.webview.postMessage({ command: "deleteMessageComplete", index: message.index });
+                return;
             }
         },
         null,
@@ -525,6 +533,20 @@ async function initApiProviderIfNeeded(context: vscode.ExtensionContext, force: 
         console.log("init() returned.");
     } catch (error: any) {
         vscode.window.showErrorMessage(`Error initializing provider: ${error.message}`);
+    }
+}
+
+async function modifyMessage(index: number, newContent: string) {
+    if (index >= 0 && index < messages.length) {
+        messages[index].content = newContent;
+        await autoSaveMessages();
+    }
+}
+
+async function deleteMessage(index: number) {
+    if (index >= 0 && index < messages.length) {
+        messages.splice(index, 1);
+        await autoSaveMessages();
     }
 }
 
