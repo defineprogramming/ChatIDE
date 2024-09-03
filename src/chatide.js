@@ -104,6 +104,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.getElementById('send-button').textContent = "Send";
             }
             break;
+        case "modifyMessageComplete":
+            const modifiedMessageElement = messagesContainer.children[message.index];
+            if (modifiedMessageElement) {
+                modifiedMessageElement.innerHTML = message.newContent;
+            }
+            break;
+        case "deleteMessageComplete":
+            const deletedMessageElement = messagesContainer.children[message.index];
+            if (deletedMessageElement) {
+                messagesContainer.removeChild(deletedMessageElement);
+            }
+            break;
         default:
             throw new Error(`Unknown command: ${message.command}`);
         }
@@ -166,6 +178,37 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
         highlightCodeBlocks(messageElement);
+
+        // Add modify and delete buttons
+        if (role === 'user' || role === 'assistant') {
+            const modifyButton = document.createElement('button');
+            modifyButton.textContent = 'Modify';
+            modifyButton.className = 'modify-button';
+            modifyButton.addEventListener('click', () => {
+                const newContent = prompt('Enter new content:', content);
+                if (newContent !== null) {
+                    vscode.postMessage({
+                        command: 'modifyMessage',
+                        index: Array.from(messagesContainer.children).indexOf(messageElement),
+                        newContent: newContent
+                    });
+                }
+            });
+            messageElement.appendChild(modifyButton);
+
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete';
+            deleteButton.className = 'delete-button';
+            deleteButton.addEventListener('click', () => {
+                if (confirm('Are you sure you want to delete this message?')) {
+                    vscode.postMessage({
+                        command: 'deleteMessage',
+                        index: Array.from(messagesContainer.children).indexOf(messageElement)
+                    });
+                }
+            });
+            messageElement.appendChild(deleteButton);
+        }
 
         messagesContainer.insertAdjacentElement("beforeend", messageElement);
 
